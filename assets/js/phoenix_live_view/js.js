@@ -89,6 +89,10 @@ let JS = {
     this.addOrRemoveClasses(el, [], names, transition, time, view)
   },
 
+  exec_toggle_class(eventType, phxEvent, view, sourceEl, el, {names, ins, outs, time}){
+    this.toggle_class(el, names, ins, outs, time)
+  },
+
   exec_transition(eventType, phxEvent, view, sourceEl, el, {time, transition}){
     let [transition_start, running, transition_end] = transition
     let onStart = () => this.addOrRemoveClasses(el, transition_start.concat(running), [])
@@ -179,6 +183,25 @@ let JS = {
         })
       }
     }
+  },
+
+  toggle_class(el, names, ins, outs, time){
+    let [inClasses, inStartClasses, inEndClasses] = ins || [[], [], []]
+    let [outClasses, outStartClasses, outEndClasses] = outs || [[], [], []]
+
+    // TODO: `ins` and `outs`.
+
+    window.requestAnimationFrame(() => {
+      let [prevAdds, prevRemoves] = DOM.getSticky(el, "classes", [[], []])
+      let newAdds = names.filter(name => prevAdds.indexOf(name) < 0 && !el.classList.contains(name))
+      let newRemoves = names.filter(name => prevRemoves.indexOf(name) < 0 && el.classList.contains(name))
+
+      DOM.putSticky(el, "classes", currentEl => {
+        currentEl.classList.remove(...newRemoves)
+        currentEl.classList.add(...newAdds)
+        return [newAdds, newRemoves]
+      })
+    })
   },
 
   addOrRemoveClasses(el, adds, removes, transition, time, view){

@@ -19,6 +19,7 @@ defmodule Phoenix.LiveView.JS do
 
     * `add_class` - Add classes to elements, with optional transitions
     * `remove_class` - Remove classes from elements, with optional transitions
+    * `toggle_class` - Adds or removes classes to elements, with optional transitions
     * `set_attribute` - Set an attribute on elements
     * `remove_attribute` - Remove an attribute from elements
     * `show` - Show elements, with optional transitions
@@ -487,6 +488,64 @@ defmodule Phoenix.LiveView.JS do
       to: opts[:to],
       names: class_names(names),
       transition: transition_class_names(opts[:transition]),
+      time: time
+    })
+  end
+
+  @doc """
+  Toggles element class.
+
+  * `names` - The string of classes to toggle.
+
+  ## Options
+
+    * `:to` - The optional DOM selector to toggle.
+      Defaults to the interacted element.
+    * `:in` - The string of classes to apply when toggling in, or
+      a 3-tuple containing the transition class, the class to apply
+      to start the transition, and the ending transition class, such as:
+      `{"ease-out duration-300", "opacity-0", "opacity-100"}`
+    * `:out` - The string of classes to apply when toggling out, or
+      a 3-tuple containing the transition class, the class to apply
+      to start the transition, and the ending transition class, such as:
+      `{"ease-out duration-300", "opacity-100", "opacity-0"}`
+    * `:time` - The time to apply the transition `:in` and `:out` classes.
+      Defaults #{@default_transition_time}
+
+  When the toggle is complete on the client, a `phx:show-start` or `phx:hide-start`, and
+  `phx:show-end` or `phx:hide-end` event will be dispatched to the toggled elements.
+
+  ## Examples
+
+      <div id="item">My Item</div>
+
+      <button phx-click={JS.toggle_class("hidden", to: "#item")}>
+        toggle item!
+      </button>
+
+      <button phx-click={JS.toggle_class("hidden", to: "#item", in: "fade-in-scale", out: "fade-out-scale")}>
+        toggle fancy!
+      </button>
+  """
+  def toggle_class(names) when is_binary(names), do: toggle_class(%JS{}, names, [])
+  def toggle_class(%JS{} = js, names) when is_binary(names), do: toggle_class(js, names, [])
+
+  def toggle_class(names, opts) when is_binary(names) and is_list(opts) do
+    toggle_class(%JS{}, names, opts)
+  end
+
+  @doc "See `toggle_class/1`."
+  def toggle_class(%JS{} = js, names, opts) when is_binary(names) and is_list(opts) do
+    opts = validate_keys(opts, :toggle_class, [:to, :in, :out, :time])
+    in_classes = transition_class_names(opts[:in])
+    out_classes = transition_class_names(opts[:out])
+    time = opts[:time] || @default_transition_time
+
+    put_op(js, "toggle_class", %{
+      to: opts[:to],
+      names: class_names(names),
+      ins: in_classes,
+      outs: out_classes,
       time: time
     })
   end
